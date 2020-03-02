@@ -14,6 +14,8 @@ public class Mathdoku {
 	Map<String, Group> string2group = new HashMap<String, Group>();// contains groupname and Group object for diff
 																	// groups
 	int[][] puzzle;// puzzle to be returned after solving
+	ArrayList<String> a = new ArrayList<String>();
+	int k = 0;
 
 	// this method loads the puzzle
 
@@ -27,7 +29,6 @@ public class Mathdoku {
 		// from input stream along with a arraylist of of cell indexes
 		Map<String, ArrayList<int[]>> string2cells = new HashMap<String, ArrayList<int[]>>();
 		int n = 0;
-		int k = 0;
 		String t = null;
 		int r = 0;
 		while (true) {
@@ -40,12 +41,14 @@ public class Mathdoku {
 			// n tells about size of puzzle
 			if (n == 0) {
 				n = t.length();
+				k = n;
 			}
 			if (t.length() != n) {
 				return false;
 			}
 			int c = 0;
 			for (char i : t.toCharArray()) {
+				a.add(i + "");
 				if (!string2cells.containsKey("" + i))
 					string2cells.put("" + i, new ArrayList<int[]>());
 				// put the indexes array in the arraylist
@@ -64,8 +67,13 @@ public class Mathdoku {
 
 		for (int i = 0; i < string2cells.size(); i++) {
 			t = stream.readLine();
+			if (t.length() == 0)// if there is an empty line
+			{
+				i--;
+				continue;
+			}
 			String[] parts = t.trim().split("\\s+"); // might need to use \s+
-			if(parts.length<3)
+			if (parts.length < 3)
 				return false;
 			// first character represents group name
 			String group_name = parts[0];
@@ -95,37 +103,42 @@ public class Mathdoku {
 					g = new DivGroup(target, string2cells.get(group_name));
 					break;
 				}
-			} catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			string2group.put(group_name, g);
 		}
 		return true;
 	}
 
-	void print1() {
-		if (puzzle == null) {
-			return;
-		}
-		for (int i = 0; i < puzzle.length; i++) {
-			for (int j = 0; j < puzzle[i].length; j++)
-				System.out.print(puzzle[i][j] + " ");
-			System.out.println();
-		}
-		//System.out.println("==================");
-	}
 	String print() {
 		if (puzzle == null) {
 			return null;
 		}
-		String s="";
-		for (int i = 0; i < puzzle.length; i++) {
-			for (int j = 0; j < puzzle[i].length; j++)
-			{
-				s+=puzzle[i][j]+"";
+		// System.out.println("hhjcxbdah");
+		String s = "";
+		if (puzzle[0][0] != 0) {
+			for (int i = 0; i < puzzle.length; i++) {
+				for (int j = 0; j < puzzle[i].length; j++) {
+					s += puzzle[i][j] + "";
+				}
+				s = s + "\n";
+
 			}
-			s=s+"\n";
-			
 		}
-		//System.out.println("==================");
+           int z=k;
+		for (int i = 0; i < a.size(); i++) {
+			for (int j = i; j < k; j++) {
+
+				s = s + a.get(j);
+			}
+			i = i + z - 1;
+			k=k+z;
+			s = s + "\n";
+		
+			
+
+		}
+		// System.out.println("==================");
 		return s;
 	}
 
@@ -139,14 +152,12 @@ public class Mathdoku {
 		}
 
 		Group g = groups.get(idx); // picking groups in sorted order(no of solutions)
-		if(g==null)
-		{
+		if (g == null) {
 			return false;
 		}
 		boolean isSolved = false;
 		for (int i = 0; i < g.solutions.size(); i++) {
 			int j = 0;// cell_index
-			
 
 			for (int[] row_col : g.cells) {
 				// filling the puzzle array with for a group by taking indexes from
@@ -183,11 +194,10 @@ public class Mathdoku {
 		// If idx == 0 and isSolved=False, it means that this puzzle cannot be solved.
 		return isSolved;
 	}
-	
-	boolean readyToSolve()
-	{
+
+	boolean readyToSolve() {
 		return solve();
-		
+
 	}
 
 	boolean solve() {
@@ -203,15 +213,14 @@ public class Mathdoku {
 			// Classes(AddGroup,EqGroup....)
 			Group g = string2group.get(s);
 			// compute soln compute all possible combinations for a group
-			if(g==null)
-			{
+			if (g == null) {
 				return false;
 			}
 			g.computeSolutions(puzzle.length);
 
-			//System.out.println(s);
-			//System.out.println(g.solutions);
-			//System.out.println("=========================");
+			// System.out.println(s);
+			// System.out.println(g.solutions);
+			// System.out.println("=========================");
 		}
 
 		// arraylist of group objects
@@ -245,7 +254,6 @@ public class Mathdoku {
 //		System.out.println(m.string2group);
 		System.out.println(m.readyToSolve());
 		System.out.println(m.print());
-		m.print1();
 		System.out.println(m.choices());
 //		System.out.println(m.choices());
 		// System.out.println(Helper.sum_combinations(6, 3, new
