@@ -16,7 +16,8 @@ public class Mathdoku {
 	int[][] puzzle;// puzzle to be returned after solving
 	ArrayList<String> a = new ArrayList<String>();
 	int k = 0;
-
+	int constraintsize = 0;
+	int groupsize = 0;
 	// this method loads the puzzle
 
 	boolean loadPuzzle(BufferedReader stream) throws IOException {
@@ -33,7 +34,11 @@ public class Mathdoku {
 		int r = 0;
 		while (true) {
 			// reading lines from input stream
-			t = stream.readLine().trim();
+			t = stream.readLine();
+			if (t == null) {
+				return false;
+			}
+			t = t.trim();
 			// if line is empty in stream
 			if (t.isEmpty()) {
 				continue;
@@ -49,8 +54,9 @@ public class Mathdoku {
 			int c = 0;
 			for (char i : t.toCharArray()) {
 				a.add(i + "");
-				if (!string2cells.containsKey("" + i))
+				if (!string2cells.containsKey("" + i)) {
 					string2cells.put("" + i, new ArrayList<int[]>());
+				}
 				// put the indexes array in the arraylist
 				string2cells.get("" + i).add(new int[] { r, c++ });
 			}
@@ -61,18 +67,18 @@ public class Mathdoku {
 
 		}
 
+		groupsize = string2cells.size();
 		puzzle = new int[n][n];
 
 		// read the input stream for operation outcome for grouping and operator
 
-		for (int i = 0; i < string2cells.size(); i++) {
-			t = stream.readLine();
+		while ((t = stream.readLine()) != null) {
 			if (t.length() == 0)// if there is an empty line
 			{
-				i--;
 				continue;
 			}
 			String[] parts = t.trim().split("\\s+"); // might need to use \s+
+			constraintsize++;
 			if (parts.length < 3)
 				return false;
 			// first character represents group name
@@ -88,35 +94,37 @@ public class Mathdoku {
 				// applying various operators on the groups
 				switch (op) {
 				case '=':
-					g = new EqGroup(target, string2cells.get(group_name));
+					g = new EqGroup(target, string2cells.getOrDefault(group_name, new ArrayList<int[]>()));
 					break;
 				case '+':
-					g = new AddGroup(target, string2cells.get(group_name));
+					g = new AddGroup(target, string2cells.getOrDefault(group_name, new ArrayList<int[]>()));
 					break;
 				case '-':
-					g = new DiffGroup(target, string2cells.get(group_name));
+					g = new DiffGroup(target, string2cells.getOrDefault(group_name, new ArrayList<int[]>()));
 					break;
 				case '*':
-					g = new MultGroup(target, string2cells.get(group_name));
+					g = new MultGroup(target, string2cells.getOrDefault(group_name, new ArrayList<int[]>()));
 					break;
 				case '/':
-					g = new DivGroup(target, string2cells.get(group_name));
+					g = new DivGroup(target, string2cells.getOrDefault(group_name, new ArrayList<int[]>()));
 					break;
 				}
 			} catch (Exception e) {
 			}
 			string2group.put(group_name, g);
+
 		}
 		return true;
 	}
 
+//this method prints the puzzle if its solvable and else printle the loaded values
 	String print() {
 		if (puzzle == null) {
 			return null;
 		}
-		// System.out.println("hhjcxbdah");
+		int z = k;
 		String s = "";
-		if (puzzle[0][0] != 0) {
+		if (puzzle[0][0] != 0 && solve()) {
 			for (int i = 0; i < puzzle.length; i++) {
 				for (int j = 0; j < puzzle[i].length; j++) {
 					s += puzzle[i][j] + "";
@@ -125,24 +133,24 @@ public class Mathdoku {
 
 			}
 		}
-           int z=k;
-		for (int i = 0; i < a.size(); i++) {
-			for (int j = i; j < k; j++) {
 
-				s = s + a.get(j);
+		else {
+			for (int i = 0; i < a.size(); i++) {
+				for (int j = i; j < k; j++) {
+
+					s = s + a.get(j);
+				}
+				i = i + z - 1;
+				k = k + z;
+				s = s + "\n";
+
 			}
-			i = i + z - 1;
-			k=k+z;
-			s = s + "\n";
-		
-			
-
 		}
 		// System.out.println("==================");
 		return s;
 	}
 
-	int c = 0;
+	int c = 0;// counting no of choices
 
 //this methods tries all combinations of groups and solves the full puzzle
 	public boolean tryOut(ArrayList<Group> groups, int idx) {
@@ -189,21 +197,32 @@ public class Mathdoku {
 			for (int[] row_col : g.cells) {
 				puzzle[row_col[0]][row_col[1]] = 0;
 			}
-			c += 1;
+			c += 1;// incrementing choices everytime we backtrack at group level
 		}
 		// If idx == 0 and isSolved=False, it means that this puzzle cannot be solved.
 		return isSolved;
 	}
 
+	// this method check if puzzle could be solved or not
 	boolean readyToSolve() {
+		// if no of constraints are less than no of groups
+		if (constraintsize < groupsize) {
+			return false;
+		}
 		return solve();
 
 	}
 
+	// this method solves the puzzle
 	boolean solve() {
 		if (puzzle == null) {
 			return false;
 		}
+//		if(!readyToSolve())
+//		{
+//			return false;
+//				}
+		// couting choices
 		c = 0;
 		// 2d array puzzle which will contain final soln
 		puzzle = new int[puzzle.length][puzzle.length];
@@ -232,11 +251,24 @@ public class Mathdoku {
 		tryOut(groups, 0);
 
 //		printPuzzle();
+		for (int i = 0; i < puzzle.length; i++) {
+			for (int j = 0; j < puzzle.length; j++) {
+				if (puzzle[i][j] == 0) {
+					return false;
+				}
+			}
+		}
 		return Helper.isSolved(puzzle);
 	}
 
+	// this method returns the no of choices we did while trying diff combinations
+	// for groups at group level
 	int choices() {
-		solve();
+		// global variable calculate in solve method which returns choices
+		// if puzzle is not solvable return 0
+		if (!solve()) {
+			return 0;
+		}
 		return c;
 //		int prod = 1;
 //		for(Group g:string2group.values())
@@ -244,20 +276,4 @@ public class Mathdoku {
 //		return prod;
 	}
 
-	public static void main(String args[]) throws IOException {
-
-		FileReader inp = new FileReader("C:\\Users\\User\\Desktop\\puzzle1.txt");
-		BufferedReader buff = new BufferedReader(inp);
-
-		Mathdoku m = new Mathdoku();
-		System.out.println(m.loadPuzzle(buff));
-//		System.out.println(m.string2group);
-		System.out.println(m.readyToSolve());
-		System.out.println(m.print());
-		System.out.println(m.choices());
-//		System.out.println(m.choices());
-		// System.out.println(Helper.sum_combinations(6, 3, new
-		// ArrayList<Integer>(Arrays.asList(1,2,3,4,5))));
-//		System.out.println(Helper.mult_combinations(120, 3, new ArrayList<Integer>(Arrays.asList(1,2,3,4,5))));
-	}
 }
