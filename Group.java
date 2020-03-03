@@ -109,6 +109,7 @@ class MultGroup extends Group {
 }
 
 class EqGroup extends Group {
+	
 	int target;
 
 	public EqGroup(int target, ArrayList<int[]> n) {
